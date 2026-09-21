@@ -6,7 +6,7 @@
 -- ═══════════════════════════════
 -- CONFIG — edit these 2 lines only
 -- ═══════════════════════════════
-local SCRIPT_URL = "https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/MAKARA_Tool_v4_fixed.lua"
+local SCRIPT_URL = "https://raw.githubusercontent.com/makarachan-dotcom/makaratool/refs/heads/main/MAKARA_Tool_v4_fixed.lua"
 local SCRIPT_KEY = "MAKARA4YOU"   -- set to nil if no key required: local SCRIPT_KEY = nil
 
 -- ═══════════════════════════════
@@ -224,4 +224,3 @@ task.spawn(function()
     task.wait(1.2)
     closeSplash()
 end)
-
