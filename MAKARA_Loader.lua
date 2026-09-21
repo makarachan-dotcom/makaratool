@@ -6,7 +6,7 @@
 -- ═══════════════════════════════
 -- CONFIG — edit these 2 lines only
 -- ═══════════════════════════════
-local SCRIPT_URL = "https://raw.githubusercontent.com/makarachan-dotcom/makaratool/refs/heads/main/MAKARA_Tool_v4_fixed.lua"
+local SCRIPT_URL = "https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/MAKARA_Tool_v4_fixed.lua"
 local SCRIPT_KEY = "MAKARA4YOU"   -- set to nil if no key required: local SCRIPT_KEY = nil
 
 -- ═══════════════════════════════
@@ -15,18 +15,39 @@ local SCRIPT_KEY = "MAKARA4YOU"   -- set to nil if no key required: local SCRIPT
 
 local HttpService  = game:GetService("HttpService")
 local Players      = game:GetService("Players")
-local LP           = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
 local CoreGui      = game:GetService("CoreGui")
+
+-- Wait for LocalPlayer — Delta mobile executes before it's ready
+local LP = Players.LocalPlayer
+local _w = 0
+while not LP and _w < 100 do
+    task.wait(0.1)
+    LP = Players.LocalPlayer
+    _w = _w + 1
+end
 
 -- ───────────────────────────────
 -- Splash screen
 -- ───────────────────────────────
 local function tryParent(gui)
+    -- Try CoreGui
     local ok = pcall(function() gui.Parent = CoreGui end)
-    if not ok or gui.Parent ~= CoreGui then
-        gui.Parent = LP.PlayerGui
+    if ok and gui.Parent == CoreGui then return end
+    -- Try WaitForChild PlayerGui
+    local pgOk = pcall(function()
+        gui.Parent = LP:WaitForChild("PlayerGui", 8)
+    end)
+    if pgOk and gui.Parent then return end
+    -- Poll fallback
+    local pg = LP:FindFirstChildOfClass("PlayerGui")
+    local t = 0
+    while not pg and t < 40 do
+        task.wait(0.1)
+        pg = LP:FindFirstChildOfClass("PlayerGui")
+        t = t + 1
     end
+    if pg then pcall(function() gui.Parent = pg end) end
 end
 
 local SplashSG = Instance.new("ScreenGui")
@@ -101,7 +122,7 @@ PBFill.BorderSizePixel = 0
 PBFill.ZIndex = 103
 Instance.new("UICorner", PBFill).CornerRadius = UDim.new(0,4)
 
-local HwidL = lbl(Card, "HWID: "..(LP and tostring(LP.UserId) or "???").."_"..(LP and LP.Name or "???"),
+local HwidL = lbl(Card, "HWID: "..(LP and tostring(LP.UserId) or "loading...").."_"..(LP and LP.Name or "..."),
                   122, 7, Color3.fromRGB(70,70,120))
 local VerL  = lbl(Card, "v4.0 | Delta Mobile", 142, 8, Color3.fromRGB(80,60,140))
 
