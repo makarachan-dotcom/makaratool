@@ -15,7 +15,20 @@ local WS               = game:GetService("Workspace")
 local RS               = game:GetService("ReplicatedStorage")
 local CoreGui          = game:GetService("CoreGui")
 local StarterGui       = game:GetService("StarterGui")
-local LP               = Players.LocalPlayer
+
+-- Delta mobile: script may run before LocalPlayer exists — wait up to 10s
+local LP = Players.LocalPlayer
+if not LP then
+    LP = Players:GetPropertyChangedSignal("LocalPlayer"):Wait() and Players.LocalPlayer
+end
+-- Hard fallback: poll until available
+local _lpWait = 0
+while not LP and _lpWait < 100 do
+    task.wait(0.1)
+    LP = Players.LocalPlayer
+    _lpWait = _lpWait + 1
+end
+if not LP then error("[MAKARA] LocalPlayer never loaded — executor issue") end
 
 -- ═══════════════════════════════════════
 -- CONSTANTS
@@ -508,12 +521,28 @@ SG.ResetOnSpawn = false
 SG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 SG.IgnoreGuiInset = true
 
--- Delta mobile: CoreGui access often silently fails → use PlayerGui
+-- Delta mobile: CoreGui access often silently fails → full safe fallback chain
 local function parentSG()
+    -- Try CoreGui first
     local ok = pcall(function() SG.Parent = CoreGui end)
-    if not ok or SG.Parent ~= CoreGui then
-        -- fallback to PlayerGui
-        SG.Parent = LP.PlayerGui
+    if ok and SG.Parent == CoreGui then return end
+
+    -- Try PlayerGui (LP already guaranteed non-nil from top)
+    local pgOk = pcall(function()
+        SG.Parent = LP:WaitForChild("PlayerGui", 8)
+    end)
+    if pgOk and SG.Parent then return end
+
+    -- Last resort: poll PlayerGui
+    local pg = LP:FindFirstChildOfClass("PlayerGui")
+    local tries = 0
+    while not pg and tries < 40 do
+        task.wait(0.1)
+        pg = LP:FindFirstChildOfClass("PlayerGui")
+        tries = tries + 1
+    end
+    if pg then
+        pcall(function() SG.Parent = pg end)
     end
 end
 parentSG()
